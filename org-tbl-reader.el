@@ -20,7 +20,8 @@ using headers as keys and applying readers."
     h))
 
 (defun parse-tbl (tbl readers)
-  "Parse data from a table into a list of hash-maps."
+  "Parse data from a table into a list of hash-maps.
+Using headers as keys and applying readers."
   (let ((headers (get-headers tbl))
         (data (get-data tbl)))
     (when (not (= (length headers) (length readers)))
