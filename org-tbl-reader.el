@@ -28,3 +28,5 @@ Using headers as keys and applying readers."
       (error "Length of headers doesn't match the lenght of readers."))
     (loop for row in data
           collect (parse-row headers readers row))))
+
+(provide 'parse-tbl)
