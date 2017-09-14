@@ -19,7 +19,7 @@ using headers as keys and applying readers."
           do (setf (gethash key h) (funcall reader elt)))
     h))
 
-(defun parse-tbl (tbl readers)
+(defun org-parse-tbl (tbl readers)
   "Parse data from a table into a list of hash-maps.
 Using headers as keys and applying readers."
   (let ((headers (get-headers tbl))
@@ -29,4 +29,4 @@ Using headers as keys and applying readers."
     (loop for row in data
           collect (parse-row headers readers row))))
 
-(provide 'parse-tbl)
+(provide 'org-parse-tbl)
