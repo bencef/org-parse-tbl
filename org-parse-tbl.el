@@ -4,10 +4,9 @@
 
 (defun get-data (tbl)
   "Get unprocessed rows of data"
-  (let (acc)
-    (dolist (row (cdr tbl) (nreverse acc))
-      (when (listp row)
-        (push row acc)))))
+  (loop for row in (rest tbl)
+        when (listp row)
+        collect row))
 
 (defun parse-row (headers readers row)
   "Collect the elements of row into a hash-map
