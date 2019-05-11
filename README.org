@@ -83,7 +83,7 @@ Code for processing [[https://orgmode.org/][org-mode]] tables from emacs lisp co
     (defun avarage (numbers)
       "Return the avarage of the given `numbers'."
       (let ((len (length numbers))
-            (sum (loop for num in numbers sum num)))
+            (sum (apply #'+ numbers)))
         (/ (* 1.0 sum)
            len)))
 
