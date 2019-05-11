@@ -1,0 +1,115 @@
+#+OPTIONS: toc:nil num:nil ^:nil
+#+TITLE: Parsing org-mode tables in emacs lisp
+#+AUTHOR: Bence Fábián <begnoc@gmail.com>
+
+Code for processing [[https://orgmode.org/][org-mode]] tables from emacs lisp code snippets.
+
+* Installation
+
+  Download =org-parse-tbl.el= and place it in a directory where emacs
+  can find it.
+
+  The directory needs to be on =load-path=.  For example:
+
+  #+BEGIN_SRC emacs-lisp
+    (add-to-list 'load-path "/path/to/directory")
+  #+END_SRC
+
+  Then it can be loaded with =require=.
+
+* Example usage
+
+  The script is geared towards simple tables with a heading.
+
+  Given the following table:
+
+  #+name: students-tbl
+  | Name  | Class    | Age |
+  |-------+----------+-----|
+  | Alice | Econ 101 | 23  |
+  | Bob   | Econ 101 | 24  |
+  | Carol | Eng 101  | 23  |
+  | Dan   | Eng 102  | 25  |
+
+  Which looks like this in raw org-mode:
+
+  #+BEGIN_EXAMPLE
+    | Name  | Class    | Age |
+    |-------+----------+-----|
+    | Alice | Econ 101 | 23  |
+    | Bob   | Econ 101 | 24  |
+    | Carol | Eng 101  | 23  |
+    | Dan   | Eng 102  | 25  |
+  #+END_EXAMPLE
+
+  Create a table with the avarage age of people from given classes
+  with no regards to whether they are in 101 or 102.
+
+  - The =Name= column can be read as it is.
+  - The =Class= column needs to be split.
+  - The =Age= column has to be read as a number.
+
+
+  #+BEGIN_SRC emacs-lisp :var students=students-tbl :exports both
+    (require 'org-parse-tbl)
+
+    (defun read-class (class)
+      "Split `class' into topic and semester.  Store it in an alist."
+      (let ((regex (rx (group-n 1 (1+ any))
+                       (1+ whitespace)
+                       (group-n 2 (1+ num)))))
+        (if (not (string-match regex class))
+            (error (concat "Couldn't read class: " class))
+          (let ((topic (match-string 1 class))
+                (semester (match-string 2 class)))
+            (list `(topic . ,topic)
+                  `(semester . ,semester))))))
+
+    ;; (read-class "Econ 101")
+    ;; ((topic . "Econ") (semester . "101"))
+
+    (defun read-age (age)
+      "Read the age of a student.  If given a number then keep it as
+    is.  If given a string then try to convert it to a number."
+      (etypecase age
+        (string (string-to-number age))
+        (number age)))
+
+    ;; (read-age 23)
+    ;; 23
+    ;; (read-age "42")
+    ;; 42
+
+    (defun avarage (numbers)
+      "Return the avarage of the given `numbers'."
+      (let ((len (length numbers))
+            (sum (loop for num in numbers sum num)))
+        (/ (* 1.0 sum)
+           len)))
+
+    (let* ((readers (list #'identity
+                          #'read-class
+                          #'read-age))
+           (table (org-parse-tbl students readers))
+           (topics (list)))
+      ;; collect all topics
+      (loop for student in table
+           do (let* ((age (gethash "Age" student))
+                     (class (gethash "Class" student))
+                     (topic (intern (alist-get 'topic class))))
+                (push age
+                      (alist-get topic topics (list)))))
+      ;; calculate avarages
+      (let ((result
+             (loop for (class . ages) in topics
+                   collect (list class (avarage ages)))))
+        ;; add heading
+        (push 'hline result)
+        (push (list "Topic" "Avarage age") result)))
+  #+END_SRC
+
+  #+RESULTS:
+  | Topic | Avarage age |
+  |-------+-------------|
+  | Eng   |        24.0 |
+  | Econ  |        23.5 |
